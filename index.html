@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Velha: Lua & Triângulo</title>
+    <style>
+        /* --- DESIGN SYSTEM & VARIÁVEIS --- */
+        :root {
+            --bg-principal: #fff0f6;      /* Rosa muito suave de fundo */
+            --container-bg: #ffffff;      /* Branco puro para o cartão */
+            --cor-primaria: #ff66b2;      /* Rosa médio vibrante */
+            --cor-secundaria: #ff3399;    /* Rosa escuro para destaques */
+            --cor-borda: #ffccd5;         /* Rosa claro para bordas e divisórias */
+            --cor-texto: #4a1525;         /* Tom de vinho escuro para legibilidade */
+            --sombra: 0 10px 30px rgba(255, 102, 178, 0.15);
+            --transicao: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- CONFIGURAÇÕES GERAIS --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-principal);
+            color: var(--cor-texto);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* --- CONTAINER DO JOGO --- */
+        .game-wrapper {
+            background-color: var(--container-bg);
+            padding: 35px;
+            border-radius: 24px;
+            box-shadow: var(--sombra);
+            text-align: center;
+            max-width: 420px;
+            width: 100%;
+            border: 2px solid var(--cor-borda);
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- SISTEMA DE TELAS --- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            animation: slideFadeIn 0.4s ease-out forwards;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            color: var(--cor-secundaria);
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #b08d98;
+            margin-bottom: 25px;
+        }
+
+        /* --- DECORAÇÃO DA TELA INICIAL --- */
+        .menu-decor {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 40px 0;
+            height: 60px;
+        }
+
+        .decor-lua {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 14px 14px 0 0 var(--cor-primaria);
+            transform: translate(-7px, -7px);
+        }
+
+        .decor-tri {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 43px solid var(--cor-secundaria);
+        }
+
+        /* --- PLACAR / STATUS DO TURNO --- */
+        .status-container {
+            background-color: var(--bg-principal);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: var(--cor-primaria);
+            font-size: 1.1rem;
+            border: 1px solid var(--cor-borda);
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            font-size: 0.8rem;
+            color: #8c6070;
+            border-bottom: 1px dashed var(--cor-borda);
+            padding-bottom: 15px;
+            gap: 8px;
+        }
+
+        .score-box {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+            flex: 1;
+            background-color: #fff9fc;
+            padding: 8px 4px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 204, 213, 0.4);
+        }
+
+        .score-box span:first-child {
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .score-val {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--cor-secundaria);
+        }
+
+        /* --- GRADE DO JOGO --- */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 0 auto 25px auto;
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .cell {
+            background-color: #ffffff;
+            border: 2px solid var(--cor-borda);
+            border-radius: 16px;
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: var(--transicao);
+        }
+
+        /* Passar com o mouse por cima das células vazias */
+        .cell:not(.taken):hover {
+            background-color: var(--bg-principal);
+            border-color: var(--cor-primaria);
+            transform: scale(1.03);
+        }
+
+        /* --- ELEMENTOS GRÁFICOS (LUA E TRIÂNGULO) --- */
+        
+        /* 1. Lua Crescente (Jogador 1) */
+        .cell.lua::before {
+            content: '';
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            box-shadow: 12px 12px 0 0 var(--cor-primaria);
+            transform: translate(-6px, -6px);
+            animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* 2. Triângulo (Jogador 2) */
+        .cell.triangulo::before {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 22px solid transparent;
+            border-right: 22px solid transparent;
+            border-bottom: 38px solid var(--cor-secundaria);
+            transform: translate(0, -3px);
+            animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Destaque para as células vencedoras */
+        .cell.winner {
+            background-color: #ffe3ec;
+            border-color: var(--cor-secundaria);
+            animation: pulse 1s infinite alternate;
+        }
+
+        /* --- SISTEMA DE BOTÕES --- */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn {
+            border: none;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            transition: var(--transicao);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--cor-primaria);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 102, 178, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--cor-secundaria);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 51, 153, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--cor-secundaria);
+            border: 2px solid var(--cor-borda);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-principal);
+            border-color: var(--cor-secundaria);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        /* --- ANIMAÇÕES --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.5) translate(-6px, -6px); }
+            to { opacity: 1; transform: scale(1) translate(-6px, -6px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        
+        <!-- TELA INICIAL (MENU) -->
+        <div class="screen active" id="start-screen">
+            <h1>Jogo da Velha</h1>
+            <div class="subtitle">Edição Lua & Triângulo</div>
+            
+            <div class="menu-decor">
+                <div class="decor-lua"></div>
+                <div class="decor-tri"></div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-start">Começar Partida</button>
+        </div>
+
+        <!-- TELA DE JOGO ATIVO -->
+        <div class="screen" id="game-screen">
+            <!-- Placar Acumulado -->
+            <div class="score-board">
+                <div class="score-box">
+                    <span>Lua 🌙</span>
+                    <span id="score-lua" class="score-val">0</span>
+                </div>
+                <div class="score-box">
+                    <span>Empate 🌸</span>
+                    <span id="score-velhas" class="score-val">0</span>
+                </div>
+                <div class="score-box">
+                    <span>Triângulo 🔺</span>
+                    <span id="score-triangulo" class="score-val">0</span>
+                </div>
+            </div>
+
+            <!-- Status do Turno ou do Resultado -->
+            <div class="status-container" id="game-status">
+                Aguardando início...
+            </div>
+
+            <!-- Grade do Jogo -->
+            <div class="board" id="board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+
+            <!-- Controles do Jogo -->
+            <div class="btn-group">
+                <button class="btn btn-primary" id="btn-restart">Reiniciar Rodada</button>
+                <button class="btn btn-secondary" id="btn-exit">Sair</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Telas do jogo
+            const startScreen = document.getElementById('start-screen');
+            const gameScreen = document.getElementById('game-screen');
+            
+            // Botões de navegação e controle
+            const btnStart = document.getElementById('btn-start');
+            const btnExit = document.getElementById('btn-exit');
+            const btnRestart = document.getElementById('btn-restart');
+            
+            // Componentes da partida
+            const cells = document.querySelectorAll('.cell');
+            const statusDisplay = document.getElementById('game-status');
+            const scoreLuaDisplay = document.getElementById('score-lua');
+            const scoreTrianguloDisplay = document.getElementById('score-triangulo');
+            const scoreVelhasDisplay = document.getElementById('score-velhas');
+
+            // Identificadores de jogadores
+            const CLASSE_LUA = 'lua';
+            const CLASSE_TRIANGULO = 'triangulo';
+
+            // Estados lógicos da partida
+            let turnoDaLua = true;
+            let jogoAtivo = true;
+            let estadoTabuleiro = ["", "", "", "", "", "", "", "", ""];
+
+            // Histórico de pontuação acumulada
+            let vitoriasLua = 0;
+            let vitoriasTriangulo = 0;
+            let empates = 0;
+
+            // Combinações possíveis para vitória
+            const condicoesVitoria = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Horizontais
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Verticais
+                [0, 4, 8], [2, 4, 6]             // Diagonais
+            ];
+
+            // Altera a visibilidade das telas
+            function transicaoParaTela(telaAlvo) {
+                startScreen.classList.remove('active');
+                gameScreen.classList.remove('active');
+                telaAlvo.classList.add('active');
+            }
+
+            // Atualiza o texto do turno atual
+            function atualizarStatus() {
+                if (turnoDaLua) {
+                    statusDisplay.textContent = "Vez de: Lua (🌙)";
+                } else {
+                    statusDisplay.textContent = "Vez de: Triângulo (🔺)";
+                }
+            }
+
+            // Gerencia o clique em uma determinada célula
+            function lidarComClique(e) {
+                const cell = e.target;
+                const index = parseInt(cell.getAttribute('data-index'));
+
+                // Verifica se a célula está disponível e se a rodada ainda não terminou
+                if (estadoTabuleiro[index] !== "" || !jogoAtivo) {
+                    return;
+                }
+
+                // Obtém o jogador atual
+                const jogadorAtual = turnoDaLua ? CLASSE_LUA : CLASSE_TRIANGULO;
+                
+                // Grava a jogada no array de controle e aplica a classe visual
+                estadoTabuleiro[index] = jogadorAtual;
+                cell.classList.add(jogadorAtual, 'taken');
+
+                verificarResultado();
+            }
+
+            // Verifica o desfecho da jogada (vitória, empate ou continuidade)
+            function verificarResultado() {
+                let rodadaGanhou = false;
+                let indicesVencedores = [];
+
+                for (let i = 0; i < condicoesVitoria.length; i++) {
+                    const condicao = condicoesVitoria[i];
+                    const a = estadoTabuleiro[condicao[0]];
+                    const b = estadoTabuleiro[condicao[1]];
+                    const c = estadoTabuleiro[condicao[2]];
+
+                    if (a === "" || b === "" || c === "") {
+                        continue;
+                    }
+
+                    if (a === b && b === c) {
+                        rodadaGanhou = true;
+                        indicesVencedores = condicao;
+                        break;
+                    }
+                }
+
+                if (rodadaGanhou) {
+                    jogoAtivo = false;
+                    
+                    // Realça visualmente a linha vitoriosa
+                    indicesVencedores.forEach(index => {
+                        cells[index].classList.add('winner');
+                    });
+
+                    if (turnoDaLua) {
+                        vitoriasLua++;
+                        scoreLuaDisplay.textContent = vitoriasLua;
+                        statusDisplay.textContent = "Vitória da Lua! 🌙✨";
+                    } else {
+                        vitoriasTriangulo++;
+                        scoreTrianguloDisplay.textContent = vitoriasTriangulo;
+                        statusDisplay.textContent = "Vitória do Triângulo! 🔺🌸";
+                    }
+                    return;
+                }
+
+                // Verifica se ocorreu um empate
+                const rodadaEmpatou = !estadoTabuleiro.includes("");
+                if (rodadaEmpatou) {
+                    jogoAtivo = false;
+                    empates++;
+                    scoreVelhasDisplay.textContent = empates;
+                    statusDisplay.textContent = "Empate! 🌸";
+                    return;
+                }
+
+                // Passa o turno se o jogo prosseguir
+                turnoDaLua = !turnoDaLua;
+                atualizarStatus();
+            }
+
+            // Limpa o tabuleiro de jogo para iniciar nova rodada
+            function resetarTabuleiro() {
+                turnoDaLua = true;
+                jogoAtivo = true;
+                estadoTabuleiro = ["", "", "", "", "", "", "", "", ""];
+                atualizarStatus();
+
+                cells.forEach(cell => {
+                    cell.className = 'cell'; // Remove as marcas de jogo antigas e destaques
+                });
+            }
+
+            // Reseta todos os valores originais (placar e tabuleiro)
+            function resetarJogoCompleto() {
+                vitoriasLua = 0;
+                vitoriasTriangulo = 0;
+                empates = 0;
+                
+                scoreLuaDisplay.textContent = "0";
+                scoreTrianguloDisplay.textContent = "0";
+                scoreVelhasDisplay.textContent = "0";
+                
+                resetarTabuleiro();
+            }
+
+            // --- ATRIBUIÇÃO DOS EVENTOS ---
+            
+            // Eventos dos quadrados da grade
+            cells.forEach(cell => {
+                cell.addEventListener('click', lidarComClique);
+            });
+
+            // Iniciar a partida através da tela inicial
+            btnStart.addEventListener('click', () => {
+                resetarTabuleiro();
+                transicaoParaTela(gameScreen);
+            });
+
+            // Reiniciar a rodada atual
+            btnRestart.addEventListener('click', resetarTabuleiro);
+
+            // Sair e voltar à tela inicial limpando a pontuação
+            btnExit.addEventListener('click', () => {
+                resetarJogoCompleto();
+                transicaoParaTela(startScreen);
+            });
+        });
+    </script>
+</body>
+</html>
