@@ -1,20 +1,37 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jogo da Velha: Lua & Triângulo</title>
     <style>
-        /* --- DESIGN SYSTEM & VARIÁVEIS --- */
-        :root {
+        /* --- DESIGN SYSTEM & VARIÁVEIS DE TEMA --- */
+        
+        /* Tema 1: Rosa Místico (Claro) */
+        body.theme-rosa {
             --bg-principal: #fff0f6;      /* Rosa muito suave de fundo */
-            --container-bg: #ffffff;      /* Branco puro para o cartão */
-            --cor-primaria: #ff66b2;      /* Rosa médio vibrante */
-            --cor-secundaria: #ff3399;    /* Rosa escuro para destaques */
-            --cor-borda: #ffccd5;         /* Rosa claro para bordas e divisórias */
-            --cor-texto: #4a1525;         /* Tom de vinho escuro para legibilidade */
-            --sombra: 0 10px 30px rgba(255, 102, 178, 0.15);
-            --transicao: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --container-bg: #ffffff;      /* Branco puro para a tela/card */
+            --cor-primaria: #97677f;      /* Rosa místico médio */
+            --cor-secundaria: #7e3b5c;    /* Ameixa escuro para destaques */
+            --cor-borda: #ffccd5;         /* Rosa claro para divisórias */
+            --cor-texto: #4a1525;         /* Tom de vinho escuro */
+            --sombra: 0 10px 30px rgba(126, 59, 92, 0.15);
+            --celula-vazia-hover: #fff0f6;
+            --caixa-placar-bg: #fff9fc;
+        }
+
+        /* Tema 2: Noite Cósmica (Escuro) */
+        body.theme-cosmico {
+            --bg-principal: #0c0e17;      /* Azul escuro quase preto */
+            --container-bg: #16192b;      /* Azul-escuro cósmico */
+            --cor-primaria: #a78bfa;      /* Violeta estelar */
+            --cor-secundaria: #c084fc;    /* Lilás brilhante */
+            --cor-borda: #3b3f61;         /* Azul acinzentado */
+            --cor-texto: #f3f4f6;         /* Cinza quase branco */
+            --sombra: 0 10px 35px rgba(0, 0, 0, 0.5);
+            --celula-vazia-hover: #222641;
+            --caixa-placar-bg: #1c2038;
         }
 
         /* --- CONFIGURAÇÕES GERAIS --- */
@@ -35,6 +52,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
         /* --- CONTAINER DO JOGO --- */
@@ -44,12 +62,37 @@
             border-radius: 24px;
             box-shadow: var(--sombra);
             text-align: center;
-            max-width: 420px;
+            max-width: 440px;
             width: 100%;
             border: 2px solid var(--cor-borda);
             animation: fadeIn 0.5s ease-out;
             position: relative;
             overflow: hidden;
+            transition: background-color 0.4s ease, border-color 0.4s ease;
+        }
+
+        /* --- BOTÃO FLUTUANTE DE TEMA --- */
+        .theme-toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: 2px solid var(--cor-borda);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            transition: var(--transicao);
+            color: var(--cor-secundaria);
+            z-index: 10;
+        }
+        .theme-toggle-btn:hover {
+            background-color: var(--bg-principal);
+            transform: rotate(30deg);
         }
 
         /* --- SISTEMA DE TELAS --- */
@@ -69,38 +112,110 @@
             margin-bottom: 8px;
             color: var(--cor-secundaria);
             letter-spacing: -0.5px;
+            padding-right: 30px; /* Evita sobreposição com o botão de tema */
         }
 
         .subtitle {
             font-size: 0.95rem;
-            color: #b08d98;
+            color: var(--cor-primaria);
+            margin-bottom: 25px;
+            opacity: 0.8;
+        }
+
+        /* --- CONFIGURAÇÕES DE PERSONALIZAÇÃO (MENU) --- */
+        .config-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-align: left;
             margin-bottom: 25px;
         }
 
-        /* --- DECORAÇÃO DA TELA INICIAL --- */
-        .menu-decor {
+        .config-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--cor-primaria);
+        }
+
+        input[type="text"] {
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 2px solid var(--cor-borda);
+            background-color: var(--container-bg);
+            color: var(--cor-texto);
+            font-size: 0.95rem;
+            outline: none;
+            transition: var(--transicao);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--cor-primaria);
+            box-shadow: 0 0 8px rgba(151, 103, 127, 0.2);
+        }
+
+        /* Alternador de Modo de Jogo */
+        .mode-selector {
+            display: flex;
+            background-color: var(--bg-principal);
+            padding: 6px;
+            border-radius: 14px;
+            border: 1px solid var(--cor-borda);
+            margin-bottom: 20px;
+            gap: 4px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--cor-primaria);
+            font-weight: bold;
+            font-size: 0.9rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transicao);
+        }
+
+        .mode-btn.active {
+            background-color: var(--container-bg);
+            color: var(--cor-secundaria);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Escolha de Símbolo (Modo IA) */
+        .symbol-selector {
+            display: flex;
+            gap: 12px;
+            margin-top: 5px;
+        }
+
+        .symbol-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--cor-borda);
+            border-radius: 12px;
+            background: var(--container-bg);
+            color: var(--cor-texto);
+            font-weight: bold;
+            cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 30px;
-            margin: 40px 0;
-            height: 60px;
+            gap: 8px;
+            transition: var(--transicao);
         }
 
-        .decor-lua {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            box-shadow: 14px 14px 0 0 var(--cor-primaria);
-            transform: translate(-7px, -7px);
-        }
-
-        .decor-tri {
-            width: 0;
-            height: 0;
-            border-left: 25px solid transparent;
-            border-right: 25px solid transparent;
-            border-bottom: 43px solid var(--cor-secundaria);
+        .symbol-option.active {
+            border-color: var(--cor-secundaria);
+            background-color: var(--bg-principal);
+            color: var(--cor-secundaria);
         }
 
         /* --- PLACAR / STATUS DO TURNO --- */
@@ -117,6 +232,7 @@
             color: var(--cor-primaria);
             font-size: 1.1rem;
             border: 1px solid var(--cor-borda);
+            min-height: 50px;
         }
 
         .score-board {
@@ -124,7 +240,7 @@
             justify-content: space-between;
             margin-bottom: 25px;
             font-size: 0.8rem;
-            color: #8c6070;
+            color: var(--cor-primaria);
             border-bottom: 1px dashed var(--cor-borda);
             padding-bottom: 15px;
             gap: 8px;
@@ -136,10 +252,11 @@
             gap: 6px;
             align-items: center;
             flex: 1;
-            background-color: #fff9fc;
+            background-color: var(--caixa-placar-bg);
             padding: 8px 4px;
             border-radius: 10px;
-            border: 1px solid rgba(255, 204, 213, 0.4);
+            border: 1px solid var(--cor-borda);
+            transition: background-color 0.4s ease;
         }
 
         .score-box span:first-child {
@@ -166,7 +283,7 @@
         }
 
         .cell {
-            background-color: #ffffff;
+            background-color: var(--container-bg);
             border: 2px solid var(--cor-borda);
             border-radius: 16px;
             aspect-ratio: 1 / 1;
@@ -180,14 +297,14 @@
 
         /* Passar com o mouse por cima das células vazias */
         .cell:not(.taken):hover {
-            background-color: var(--bg-principal);
+            background-color: var(--celula-vazia-hover);
             border-color: var(--cor-primaria);
             transform: scale(1.03);
         }
 
         /* --- ELEMENTOS GRÁFICOS (LUA E TRIÂNGULO) --- */
         
-        /* 1. Lua Crescente (Jogador 1) */
+        /* 1. Lua Crescente */
         .cell.lua::before {
             content: '';
             width: 44px;
@@ -198,7 +315,7 @@
             animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* 2. Triângulo (Jogador 2) */
+        /* 2. Triângulo */
         .cell.triangulo::before {
             content: '';
             width: 0;
@@ -212,9 +329,14 @@
 
         /* Destaque para as células vencedoras */
         .cell.winner {
-            background-color: #ffe3ec;
+            background-color: rgba(126, 59, 92, 0.15);
             border-color: var(--cor-secundaria);
             animation: pulse 1s infinite alternate;
+        }
+
+        /* Se for bloqueado devido ao turno da IA */
+        .board.blocked {
+            pointer-events: none;
         }
 
         /* --- SISTEMA DE BOTÕES --- */
@@ -243,13 +365,13 @@
         .btn-primary {
             background-color: var(--cor-primaria);
             color: white;
-            box-shadow: 0 4px 15px rgba(255, 102, 178, 0.3);
+            box-shadow: 0 4px 15px rgba(151, 103, 127, 0.3);
         }
 
         .btn-primary:hover {
             background-color: var(--cor-secundaria);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 51, 153, 0.4);
+            box-shadow: 0 6px 20px rgba(126, 59, 92, 0.4);
         }
 
         .btn-primary:active {
@@ -284,8 +406,8 @@
         }
 
         @keyframes scaleIn {
-            from { opacity: 0; transform: scale(0.5) translate(-6px, -6px); }
-            to { opacity: 1; transform: scale(1) translate(-6px, -6px); }
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         @keyframes pulse {
@@ -294,18 +416,55 @@
         }
     </style>
 </head>
-<body>
+<body class="theme-rosa">
 
     <div class="game-wrapper">
         
-        <!-- TELA INICIAL (MENU) -->
+        <!-- Botão Seletor de Tema (Rosa / Cósmico) -->
+        <button class="theme-toggle-btn" id="btn-theme" title="Alterar Tema">🌙</button>
+
+        <!-- TELA INICIAL (MENU & CONFIGURAÇÃO) -->
         <div class="screen active" id="start-screen">
             <h1>Jogo da Velha</h1>
-            <div class="subtitle">Edição Lua & Triângulo</div>
+            <div class="subtitle">Personalize e Jogue</div>
+
+            <!-- Seleção do Modo de Jogo -->
+            <div class="mode-selector">
+                <button class="mode-btn active" id="mode-pvp">Dois Jogadores</button>
+                <button class="mode-btn" id="mode-ai">Contra o Bot</button>
+            </div>
             
-            <div class="menu-decor">
-                <div class="decor-lua"></div>
-                <div class="decor-tri"></div>
+            <div class="config-section">
+                <!-- Inputs para Modo Local -->
+                <div id="config-names-pvp">
+                    <div class="config-group" style="margin-bottom: 12px;">
+                        <label for="name-j1">Jogador 1 (Lua 🌙):</label>
+                        <input type="text" id="name-j1" placeholder="Ex: Maria" maxlength="15">
+                    </div>
+                    <div class="config-group">
+                        <label for="name-j2">Jogador 2 (Triângulo 🔺):</label>
+                        <input type="text" id="name-j2" placeholder="Ex: João" maxlength="15">
+                    </div>
+                </div>
+
+                <!-- Inputs para Modo IA -->
+                <div id="config-names-ai" style="display: none;">
+                    <div class="config-group" style="margin-bottom: 15px;">
+                        <label for="name-human">Seu nome:</label>
+                        <input type="text" id="name-human" placeholder="Ex: Desafiante" maxlength="15">
+                    </div>
+                    <div class="config-group">
+                        <label>Escolha o seu símbolo:</label>
+                        <div class="symbol-selector">
+                            <button class="symbol-option active" id="sym-lua" data-symbol="lua">
+                                Lua 🌙 (Começa)
+                            </button>
+                            <button class="symbol-option" id="sym-tri" data-symbol="triangulo">
+                                Triângulo 🔺
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <button class="btn btn-primary" id="btn-start">Começar Partida</button>
@@ -313,28 +472,28 @@
 
         <!-- TELA DE JOGO ATIVO -->
         <div class="screen" id="game-screen">
-            <!-- Placar Acumulado -->
+            <!-- Placar Dinâmico -->
             <div class="score-board">
                 <div class="score-box">
-                    <span>Lua 🌙</span>
-                    <span id="score-lua" class="score-val">0</span>
+                    <span id="label-score-p1">Lua</span>
+                    <span id="score-p1" class="score-val">0</span>
                 </div>
                 <div class="score-box">
                     <span>Empate 🌸</span>
-                    <span id="score-velhas" class="score-val">0</span>
+                    <span id="score-ties" class="score-val">0</span>
                 </div>
                 <div class="score-box">
-                    <span>Triângulo 🔺</span>
-                    <span id="score-triangulo" class="score-val">0</span>
+                    <span id="label-score-p2">Triângulo</span>
+                    <span id="score-p2" class="score-val">0</span>
                 </div>
             </div>
 
-            <!-- Status do Turno ou do Resultado -->
+            <!-- Status de Turnos e Resultados -->
             <div class="status-container" id="game-status">
-                Aguardando início...
+                Carregando...
             </div>
 
-            <!-- Grade do Jogo -->
+            <!-- Grade do Jogo da Velha -->
             <div class="board" id="board">
                 <div class="cell" data-index="0"></div>
                 <div class="cell" data-index="1"></div>
@@ -347,7 +506,7 @@
                 <div class="cell" data-index="8"></div>
             </div>
 
-            <!-- Controles do Jogo -->
+            <!-- Controles de Partida -->
             <div class="btn-group">
                 <button class="btn btn-primary" id="btn-restart">Reiniciar Rodada</button>
                 <button class="btn btn-secondary" id="btn-exit">Sair</button>
@@ -362,77 +521,275 @@
             const startScreen = document.getElementById('start-screen');
             const gameScreen = document.getElementById('game-screen');
             
-            // Botões de navegação e controle
+            // Elementos de Controle do Menu
+            const btnTheme = document.getElementById('btn-theme');
             const btnStart = document.getElementById('btn-start');
             const btnExit = document.getElementById('btn-exit');
             const btnRestart = document.getElementById('btn-restart');
+            const modePvP = document.getElementById('mode-pvp');
+            const modeAI = document.getElementById('mode-ai');
             
-            // Componentes da partida
-            const cells = document.querySelectorAll('.cell');
-            const statusDisplay = document.getElementById('game-status');
-            const scoreLuaDisplay = document.getElementById('score-lua');
-            const scoreTrianguloDisplay = document.getElementById('score-triangulo');
-            const scoreVelhasDisplay = document.getElementById('score-velhas');
+            const configPvP = document.getElementById('config-names-pvp');
+            const configAI = document.getElementById('config-names-ai');
+            const symLua = document.getElementById('sym-lua');
+            const symTri = document.getElementById('sym-tri');
 
-            // Identificadores de jogadores
+            // Inputs e Placar
+            const inputNameJ1 = document.getElementById('name-j1');
+            const inputNameJ2 = document.getElementById('name-j2');
+            const inputNameHuman = document.getElementById('name-human');
+            
+            const labelP1 = document.getElementById('label-score-p1');
+            const labelP2 = document.getElementById('label-score-p2');
+            const scoreP1Display = document.getElementById('score-p1');
+            const scoreP2Display = document.getElementById('score-p2');
+            const scoreTiesDisplay = document.getElementById('score-ties');
+
+            // Tabuleiro e Status
+            const cells = document.querySelectorAll('.cell');
+            const board = document.getElementById('board');
+            const statusDisplay = document.getElementById('game-status');
+
+            // Constantes das Classes de Jogadores
             const CLASSE_LUA = 'lua';
             const CLASSE_TRIANGULO = 'triangulo';
 
-            // Estados lógicos da partida
+            // Variáveis de Configuração Atuais
+            let contraComputador = false;
+            let simboloHumano = CLASSE_LUA; // Padrão se jogar contra IA
+            let nomeJogadorLua = "Lua ✨";
+            let nomeJogadorTriangulo = "Triângulo 🔺";
+
+            // Estados da Rodada de Jogo
             let turnoDaLua = true;
             let jogoAtivo = true;
             let estadoTabuleiro = ["", "", "", "", "", "", "", "", ""];
 
-            // Histórico de pontuação acumulada
+            // Registros de Pontuação Acumulada
             let vitoriasLua = 0;
             let vitoriasTriangulo = 0;
             let empates = 0;
 
-            // Combinações possíveis para vitória
+            // Alinhamentos vencedores
             const condicoesVitoria = [
                 [0, 1, 2], [3, 4, 5], [6, 7, 8], // Horizontais
                 [0, 3, 6], [1, 4, 7], [2, 5, 8], // Verticais
                 [0, 4, 8], [2, 4, 6]             // Diagonais
             ];
 
-            // Altera a visibilidade das telas
-            function transicaoParaTela(telaAlvo) {
+            // --- GESTÃO DE TEMAS (Rosa / Cósmico) ---
+            btnTheme.addEventListener('click', () => {
+                const body = document.body;
+                if (body.classList.contains('theme-rosa')) {
+                    body.classList.replace('theme-rosa', 'theme-cosmico');
+                    btnTheme.textContent = '☀️';
+                } else {
+                    body.classList.replace('theme-cosmico', 'theme-rosa');
+                    btnTheme.textContent = '🌙';
+                }
+            });
+
+            // --- EVENTOS DO MENU DE CONFIGURAÇÃO ---
+            modePvP.addEventListener('click', () => {
+                modePvP.classList.add('active');
+                modeAI.classList.remove('active');
+                configPvP.style.display = 'block';
+                configAI.style.display = 'none';
+                contraComputador = false;
+            });
+
+            modeAI.addEventListener('click', () => {
+                modeAI.classList.add('active');
+                modePvP.classList.remove('active');
+                configPvP.style.display = 'none';
+                configAI.style.display = 'block';
+                contraComputador = true;
+            });
+
+            // Opção de escolha de símbolo para IA
+            symLua.addEventListener('click', () => {
+                symLua.classList.add('active');
+                symTri.classList.remove('active');
+                simboloHumano = CLASSE_LUA;
+            });
+
+            symTri.addEventListener('click', () => {
+                symTri.classList.add('active');
+                symLua.classList.remove('active');
+                simboloHumano = CLASSE_TRIANGULO;
+            });
+
+            // Transição entre telas do jogo
+            function transicaoTela(telaAlvo) {
                 startScreen.classList.remove('active');
                 gameScreen.classList.remove('active');
                 telaAlvo.classList.add('active');
             }
 
-            // Atualiza o texto do turno atual
-            function atualizarStatus() {
+            // Atualização visual do Turno
+            function atualizarTextoTurno() {
                 if (turnoDaLua) {
-                    statusDisplay.textContent = "Vez de: Lua (🌙)";
+                    statusDisplay.textContent = `Vez de: ${nomeJogadorLua} (🌙)`;
                 } else {
-                    statusDisplay.textContent = "Vez de: Triângulo (🔺)";
+                    statusDisplay.textContent = `Vez de: ${nomeJogadorTriangulo} (🔺)`;
                 }
             }
 
-            // Gerencia o clique em uma determinada célula
-            function lidarComClique(e) {
+            // --- LÓGICA DE JOGO PRINCIPAL ---
+            
+            function iniciarJogo() {
+                // Definir os nomes a serem apresentados
+                if (contraComputador) {
+                    const nomeHumano = inputNameHuman.value.trim();
+                    if (simboloHumano === CLASSE_LUA) {
+                        nomeJogadorLua = nomeHumano || "Humano 👤";
+                        nomeJogadorTriangulo = "Bot 🤖";
+                    } else {
+                        nomeJogadorTriangulo = nomeHumano || "Humano 👤";
+                        nomeJogadorLua = "Bot 🤖";
+                    }
+                } else {
+                    nomeJogadorLua = inputNameJ1.value.trim() || "Lua 🌙";
+                    nomeJogadorTriangulo = inputNameJ2.value.trim() || "Triângulo 🔺";
+                }
+
+                // Configurar o painel de pontuações
+                labelP1.innerHTML = `${nomeJogadorLua}<br>(🌙)`;
+                labelP2.innerHTML = `${nomeJogadorTriangulo}<br>(🔺)`;
+
+                resetarTabuleiro();
+                transicaoTela(gameScreen);
+
+                // Se o Bot for o primeiro a jogar (Símbolo Lua)
+                if (contraComputador && simboloHumano === CLASSE_TRIANGULO) {
+                    fazerJogadaComputadorComAtraso();
+                }
+            }
+
+            // Evento ao clicar em uma casa da grade
+            function lidarComCliqueCelula(e) {
                 const cell = e.target;
                 const index = parseInt(cell.getAttribute('data-index'));
 
-                // Verifica se a célula está disponível e se a rodada ainda não terminou
-                if (estadoTabuleiro[index] !== "" || !jogoAtivo) {
-                    return;
+                // Validações de integridade do clique
+                if (estadoTabuleiro[index] !== "" || !jogoAtivo) return;
+
+                // Bloqueia caso seja a vez do Bot jogar
+                if (contraComputador) {
+                    const turnoDoComputador = (simboloHumano === CLASSE_LUA && !turnoDaLua) || 
+                                              (simboloHumano === CLASSE_TRIANGULO && turnoDaLua);
+                    if (turnoDoComputador) return;
                 }
 
-                // Obtém o jogador atual
-                const jogadorAtual = turnoDaLua ? CLASSE_LUA : CLASSE_TRIANGULO;
-                
-                // Grava a jogada no array de controle e aplica a classe visual
-                estadoTabuleiro[index] = jogadorAtual;
-                cell.classList.add(jogadorAtual, 'taken');
-
-                verificarResultado();
+                realizarJogada(index);
             }
 
-            // Verifica o desfecho da jogada (vitória, empate ou continuidade)
-            function verificarResultado() {
+            function realizarJogada(index) {
+                const jogadorAtual = turnoDaLua ? CLASSE_LUA : CLASSE_TRIANGULO;
+                estadoTabuleiro[index] = jogadorAtual;
+
+                const cell = cells[index];
+                cell.classList.add(jogadorAtual, 'taken');
+
+                if (verificarFimDeJogo()) return;
+
+                // Altera o turno
+                turnoDaLua = !turnoDaLua;
+                atualizarTextoTurno();
+
+                // Verifica se o Bot joga a seguir
+                if (contraComputador && jogoAtivo) {
+                    const vezDoComputador = (simboloHumano === CLASSE_LUA && !turnoDaLua) || 
+                                            (simboloHumano === CLASSE_TRIANGULO && turnoDaLua);
+                    if (vezDoComputador) {
+                        fazerJogadaComputadorComAtraso();
+                    }
+                }
+            }
+
+            // Simula atraso na jogada do Bot para parecer mais natural
+            function fazerJogadaComputadorComAtraso() {
+                board.classList.add('blocked');
+                statusDisplay.textContent = "O Bot está pensando...";
+                
+                setTimeout(() => {
+                    if (!jogoAtivo) return;
+                    const simboloComputador = (simboloHumano === CLASSE_LUA) ? CLASSE_TRIANGULO : CLASSE_LUA;
+                    const melhorPosicao = calcularMelhorJogada(estadoTabuleiro, simboloComputador, simboloHumano);
+                    
+                    board.classList.remove('blocked');
+                    if (melhorPosicao !== -1) {
+                        realizarJogada(melhorPosicao);
+                    }
+                }, 700);
+            }
+
+            // --- MECÂNICA DE INTELIGÊNCIA ARTIFICIAL (MINIMAX) ---
+            
+            function calcularMelhorJogada(tabuleiro, simboloAI, simboloOponente) {
+                let melhorValor = -Infinity;
+                let melhorPosicao = -1;
+
+                for (let i = 0; i < 9; i++) {
+                    if (tabuleiro[i] === "") {
+                        tabuleiro[i] = simboloAI;
+                        let valorJogada = minimax(tabuleiro, 0, false, simboloAI, simboloOponente);
+                        tabuleiro[i] = "";
+
+                        if (valorJogada > melhorValor) {
+                            melhorValor = valorJogada;
+                            melhorPosicao = i;
+                        }
+                    }
+                }
+                return melhorPosicao;
+            }
+
+            function minimax(tempTab, profundidade, isMax, simboloAI, simboloOponente) {
+                const score = avaliarEstadoInterno(tempTab, simboloAI, simboloOponente);
+
+                // Condições finais de pontuação
+                if (score === 10) return score - profundidade;
+                if (score === -10) return score + profundidade;
+                if (!tempTab.includes("")) return 0;
+
+                if (isMax) {
+                    let melhor = -Infinity;
+                    for (let i = 0; i < 9; i++) {
+                        if (tempTab[i] === "") {
+                            tempTab[i] = simboloAI;
+                            melhor = Math.max(melhor, minimax(tempTab, profundidade + 1, false, simboloAI, simboloOponente));
+                            tempTab[i] = "";
+                        }
+                    }
+                    return melhor;
+                } else {
+                    let melhor = Infinity;
+                    for (let i = 0; i < 9; i++) {
+                        if (tempTab[i] === "") {
+                            tempTab[i] = simboloOponente;
+                            melhor = Math.min(melhor, minimax(tempTab, profundidade + 1, true, simboloAI, simboloOponente));
+                            tempTab[i] = "";
+                        }
+                    }
+                    return melhor;
+                }
+            }
+
+            function avaliarEstadoInterno(tab, simboloAI, simboloOponente) {
+                for (let i = 0; i < condicoesVitoria.length; i++) {
+                    const [a, b, c] = condicoesVitoria[i];
+                    if (tab[a] !== "" && tab[a] === tab[b] && tab[b] === tab[c]) {
+                        if (tab[a] === simboloAI) return 10;
+                        if (tab[a] === simboloOponente) return -10;
+                    }
+                }
+                return 0;
+            }
+
+            // --- FINALIZAÇÃO E VERIFICAÇÕES ---
+            
+            function verificarFimDeJogo() {
                 let rodadaGanhou = false;
                 let indicesVencedores = [];
 
@@ -442,9 +799,7 @@
                     const b = estadoTabuleiro[condicao[1]];
                     const c = estadoTabuleiro[condicao[2]];
 
-                    if (a === "" || b === "" || c === "") {
-                        continue;
-                    }
+                    if (a === "" || b === "" || c === "") continue;
 
                     if (a === b && b === c) {
                         rodadaGanhou = true;
@@ -456,21 +811,20 @@
                 if (rodadaGanhou) {
                     jogoAtivo = false;
                     
-                    // Realça visualmente a linha vitoriosa
                     indicesVencedores.forEach(index => {
                         cells[index].classList.add('winner');
                     });
 
                     if (turnoDaLua) {
                         vitoriasLua++;
-                        scoreLuaDisplay.textContent = vitoriasLua;
-                        statusDisplay.textContent = "Vitória da Lua! 🌙✨";
+                        scoreP1Display.textContent = vitoriasLua;
+                        statusDisplay.textContent = `Vitória de ${nomeJogadorLua}! 🌙✨`;
                     } else {
                         vitoriasTriangulo++;
-                        scoreTrianguloDisplay.textContent = vitoriasTriangulo;
-                        statusDisplay.textContent = "Vitória do Triângulo! 🔺🌸";
+                        scoreP2Display.textContent = vitoriasTriangulo;
+                        statusDisplay.textContent = `Vitória de ${nomeJogadorTriangulo}! 🔺🌸`;
                     }
-                    return;
+                    return true;
                 }
 
                 // Verifica se ocorreu um empate
@@ -478,61 +832,56 @@
                 if (rodadaEmpatou) {
                     jogoAtivo = false;
                     empates++;
-                    scoreVelhasDisplay.textContent = empates;
-                    statusDisplay.textContent = "Empate! 🌸";
-                    return;
+                    scoreTiesDisplay.textContent = empates;
+                    statusDisplay.textContent = "Partida empatada! 🌸";
+                    return true;
                 }
 
-                // Passa o turno se o jogo prosseguir
-                turnoDaLua = !turnoDaLua;
-                atualizarStatus();
+                return false;
             }
 
-            // Limpa o tabuleiro de jogo para iniciar nova rodada
+            // Reinicia a rodada atual preservando pontuações
             function resetarTabuleiro() {
                 turnoDaLua = true;
                 jogoAtivo = true;
                 estadoTabuleiro = ["", "", "", "", "", "", "", "", ""];
-                atualizarStatus();
+                board.classList.remove('blocked');
+                atualizarTextoTurno();
 
                 cells.forEach(cell => {
-                    cell.className = 'cell'; // Remove as marcas de jogo antigas e destaques
+                    cell.className = 'cell';
                 });
+
+                // Se o Bot for Lua (Começa a jogar)
+                if (contraComputador && simboloHumano === CLASSE_TRIANGULO) {
+                    fazerJogadaComputadorComAtraso();
+                }
             }
 
-            // Reseta todos os valores originais (placar e tabuleiro)
+            // Reseta todo o histórico e pontuações retornando ao ecrã inicial
             function resetarJogoCompleto() {
                 vitoriasLua = 0;
                 vitoriasTriangulo = 0;
                 empates = 0;
                 
-                scoreLuaDisplay.textContent = "0";
-                scoreTrianguloDisplay.textContent = "0";
-                scoreVelhasDisplay.textContent = "0";
+                scoreP1Display.textContent = "0";
+                scoreP2Display.textContent = "0";
+                scoreTiesDisplay.textContent = "0";
                 
                 resetarTabuleiro();
             }
 
-            // --- ATRIBUIÇÃO DOS EVENTOS ---
-            
-            // Eventos dos quadrados da grade
+            // --- CONFIGURAÇÃO DE EVENTOS DE BOTÕES ---
             cells.forEach(cell => {
-                cell.addEventListener('click', lidarComClique);
+                cell.addEventListener('click', lidarComCliqueCelula);
             });
 
-            // Iniciar a partida através da tela inicial
-            btnStart.addEventListener('click', () => {
-                resetarTabuleiro();
-                transicaoParaTela(gameScreen);
-            });
-
-            // Reiniciar a rodada atual
+            btnStart.addEventListener('click', iniciarJogo);
             btnRestart.addEventListener('click', resetarTabuleiro);
-
-            // Sair e voltar à tela inicial limpando a pontuação
+            
             btnExit.addEventListener('click', () => {
                 resetarJogoCompleto();
-                transicaoParaTela(startScreen);
+                transicaoTela(startScreen);
             });
         });
     </script>
